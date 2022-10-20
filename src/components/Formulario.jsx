@@ -1,4 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import swal from "sweetalert";
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  OnSnapshot,
+  updateDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { async } from "@firebase/util";
 
 const Formulario = () => {
   const [cedula, SetCedula] = useState("");
@@ -12,6 +24,69 @@ const Formulario = () => {
   const [listaJugadores, setListaJugadores] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
 
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        await onSnapshot(collection(db, "jugadores"), (query) => {
+          setListaJugadores(
+            query.docs.map((doc) => ({ ...doc.data(), cedula: doc.cedula }))
+          );
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    obtenerDatos();
+  }, []);
+
+  const eliminar = async cedula => {
+    try {
+        await deleteDoc(doc(db, 'jugadores', cedula))
+    } catch (error) {
+        console.log(error)
+    }
+  }
+
+  const guardarJugador = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await addDoc(collection(db, "jugadores"), {
+        cedula: cedula,
+        jugador: jugador,
+        nacionalidad: nacionalidad,
+        altura: altura,
+        equipo: equipo,
+        posicion: posicion,
+        numero: numero,
+        habilidad: habilidad,
+      });
+      setListaJugadores([
+        ...listaJugadores,
+        {
+          cedula: data.cedula,
+          jugador: jugador,
+          nacionalidad: nacionalidad,
+          altura: altura,
+          equipo: equipo,
+          posicion: posicion,
+          numero: numero,
+          habilidad: habilidad,
+        },
+      ]);
+
+      SetCedula("");
+      SetJugador("");
+      SetNacionalidad("");
+      SetAltura("");
+      SetEquipo("");
+      SetPosicion("");
+      SetNumero("");
+      SetHabilidad("");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <div className="container mt-5">
       <h1 className="text-center">CRUD WEB2 C2</h1>
@@ -19,14 +94,29 @@ const Formulario = () => {
       <div className="row">
         <div className="col-8">
           <h4 className="text-center">JUGADORES DE LA NBA</h4>
-          <ul className="list-group">{}</ul>
+          <ul className="list-group">
+            {listaJugadores.map((item) => (
+              <li className="list-group-item" key={item.cedula}>
+                <span className="lead">
+                  {item.jugador}-{item.nacionalidad}-{item.altura}
+                  -{item.equipo}-{item.posicion}-{item.numero}-{item.habilidad}
+                </span>
+                <button className="btn btn-danger btn-sm float-end mx-2">
+                  Eliminar
+                </button>
+                <button className="btn btn-warning btn-sm float-end">
+                  Editar
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="col-4">
-          <h4 className="text-center">Agregar Jugador NBA</h4>
-          <form onSubmit="guardarJugador">
+          <h4 className="text-center">Agregar Jugador</h4>
+          <form onSubmit={guardarJugador}>
             <input
-              type="text"
+              type="number"
               className="form-control mb-2"
               placeholder="Ingrese Cédula"
               value={cedula}
@@ -124,7 +214,9 @@ Minnesota Timberwolves"
               value={habilidad}
               onChange={(e) => SetHabilidad(e.target.value)}
             />
-            <button className="btn btn-primary btn-block">Agregar</button>
+            <button type="submit" className="btn btn-primary btn-block">
+              Agregar
+            </button>
           </form>
         </div>
       </div>
