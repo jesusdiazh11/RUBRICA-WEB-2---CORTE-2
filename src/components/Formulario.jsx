@@ -40,11 +40,11 @@ const Formulario = () => {
 
   const eliminar = async (id) => {
     try {
-        await deleteDoc(doc(db, 'jugadores', id))
+      await deleteDoc(doc(db, "jugadores", id));
     } catch (error) {
-        console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const guardarJugador = async (e) => {
     e.preventDefault();
@@ -84,6 +84,74 @@ const Formulario = () => {
     }
   };
 
+  const editarJugador = async (e) => {
+    e.preventDefault();
+    try {
+      const docRef = doc(db, "jugadores", id);
+      await updateDoc(docRef, {
+        jugador: jugador,
+        nacionalidad: nacionalidad,
+        altura: altura,
+        equipo: equipo,
+        posicion: posicion,
+        numero: numero,
+        habilidad: habilidad,
+      });
+
+      const nuevoArray = listaJugadores.map((item) =>
+        item.id === id
+          ? {
+              id: id,
+              jugador: jugador,
+              nacionalidad: nacionalidad,
+              altura: altura,
+              equipo: equipo,
+              posicion: posicion,
+              numero: numero,
+              habilidad: habilidad,
+            }
+          : item
+      );
+
+      setListaJugadores(nuevoArray);
+      SetJugador("");
+      SetNacionalidad("");
+      SetAltura("");
+      SetEquipo("");
+      SetPosicion("");
+      SetNumero("");
+      SetHabilidad("");
+      SetId("")
+      setModoEdicion(false)
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const editar = (item) => {
+    SetJugador(item.jugador);
+    SetNacionalidad(item.nacionalidad);
+    SetAltura(item.altura);
+    SetEquipo(item.equipo);
+    SetPosicion(item.posicion);
+    SetNumero(item.numero);
+    SetHabilidad(item.habilidad);
+    SetId(item.id);
+    setModoEdicion(true);
+  };
+
+  const cancelar = () => {
+    setModoEdicion(false);
+    SetJugador("");
+    SetNacionalidad("");
+    SetAltura("");
+    SetEquipo("");
+    SetPosicion("");
+    SetNumero("");
+    SetHabilidad("");
+    SetId("");
+  };
+
   return (
     <div className="container mt-5">
       <h1 className="text-center">CRUD WEB2 C2</h1>
@@ -98,11 +166,16 @@ const Formulario = () => {
                   {item.jugador}-{item.nacionalidad}-{item.altura}-{item.equipo}
                   -{item.posicion}-{item.numero}-{item.habilidad}
                 </span>
-                <button className="btn btn-danger btn-sm float-end mx-2"
-                onClick={()=>eliminar(item.id)}>
+                <button
+                  className="btn btn-danger btn-sm float-end mx-2"
+                  onClick={() => eliminar(item.id)}
+                >
                   Eliminar
                 </button>
-                <button className="btn btn-warning btn-sm float-end">
+                <button
+                  className="btn btn-warning btn-sm float-end"
+                  onClick={() => editar(item)}
+                >
                   Editar
                 </button>
               </li>
@@ -111,8 +184,10 @@ const Formulario = () => {
         </div>
 
         <div className="col-4">
-          <h4 className="text-center">Agregar Jugador</h4>
-          <form onSubmit={guardarJugador}>
+          <h4 className="text-center">
+            {modoEdicion ? "Editar Jugador" : "Agregar Jugador"}
+          </h4>
+          <form onSubmit={modoEdicion ? editarJugador : guardarJugador}>
             <input
               type="text"
               className="form-control mb-2"
@@ -139,9 +214,9 @@ const Formulario = () => {
               className="form-select mb-2"
               aria-label="Default select example"
               onChange={(e) => SetEquipo(e.target.value)}
-              defaultValue=""
+              value={equipo}
             >
-              <option value="">Seleccione un Equipo</option>
+              <option value="">Seleccione Equipo</option>
               <option value="Boston Celtics">Boston Celtics</option>
               <option value="Brooklyn Nets">Brooklyn Nets</option>
               <option value="Philadelphia 76ers">Philadelphia 76ers</option>
@@ -183,17 +258,25 @@ Minnesota Timberwolves"
               <option value="New Orleans Pelicans">New Orleans Pelicans</option>
               <option value="San Antonio Spurs">San Antonio Spurs</option>
             </select>
-            <input
+            <select
               type="text"
-              className="form-control mb-2"
-              placeholder="Ingrese Posición"
-              value={posicion}
+              className="form-select mb-2"
+              aria-label="Default select example"
               onChange={(e) => SetPosicion(e.target.value)}
-            />
+              value={posicion}
+            >
+              <option value="">Seleccione Posición</option>
+              <option value="BASE">BASE</option>
+              <option value="ESCOLTA">ESCOLTA</option>
+              <option value="ALERO">ALERO</option>
+              <option value="ALA-PIVOT">ALA-PIVOT</option>
+              <option value="PIVOT">PIVOT</option>
+            </select>
+
             <input
               type="number"
               className="form-control mb-2"
-              placeholder="Ingrese Numero"
+              placeholder="Ingrese Número"
               value={numero}
               onChange={(e) => SetNumero(e.target.value)}
             />
@@ -204,9 +287,23 @@ Minnesota Timberwolves"
               value={habilidad}
               onChange={(e) => SetHabilidad(e.target.value)}
             />
-            <button type="submit" className="btn btn-primary btn-block">
-              Agregar
-            </button>
+            {modoEdicion ? (
+              <>
+                <button className="btn btn-warning btn-block" on="submit">
+                  Editar
+                </button>
+                <button
+                  className="btn btn-dark btn-block mx-2"
+                  onClick={() => cancelar()}
+                >
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <button type="submit" className="btn btn-primary btn-block">
+                Agregar
+              </button>
+            )}
           </form>
         </div>
       </div>
