@@ -6,14 +6,12 @@ import {
   addDoc,
   deleteDoc,
   doc,
-  OnSnapshot,
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
 import { async } from "@firebase/util";
 
 const Formulario = () => {
-  const [cedula, SetCedula] = useState("");
   const [jugador, SetJugador] = useState("");
   const [nacionalidad, SetNacionalidad] = useState("");
   const [altura, SetAltura] = useState("");
@@ -23,13 +21,14 @@ const Formulario = () => {
   const [habilidad, SetHabilidad] = useState("");
   const [listaJugadores, setListaJugadores] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
+  const [id, SetId] = useState("");
 
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
         await onSnapshot(collection(db, "jugadores"), (query) => {
           setListaJugadores(
-            query.docs.map((doc) => ({ ...doc.data(), cedula: doc.cedula }))
+            query.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
           );
         });
       } catch (error) {
@@ -39,9 +38,9 @@ const Formulario = () => {
     obtenerDatos();
   }, []);
 
-  const eliminar = async cedula => {
+  const eliminar = async (id) => {
     try {
-        await deleteDoc(doc(db, 'jugadores', cedula))
+        await deleteDoc(doc(db, 'jugadores', id))
     } catch (error) {
         console.log(error)
     }
@@ -51,7 +50,6 @@ const Formulario = () => {
     e.preventDefault();
     try {
       const data = await addDoc(collection(db, "jugadores"), {
-        cedula: cedula,
         jugador: jugador,
         nacionalidad: nacionalidad,
         altura: altura,
@@ -63,7 +61,6 @@ const Formulario = () => {
       setListaJugadores([
         ...listaJugadores,
         {
-          cedula: data.cedula,
           jugador: jugador,
           nacionalidad: nacionalidad,
           altura: altura,
@@ -71,10 +68,10 @@ const Formulario = () => {
           posicion: posicion,
           numero: numero,
           habilidad: habilidad,
+          id: data.id,
         },
       ]);
 
-      SetCedula("");
       SetJugador("");
       SetNacionalidad("");
       SetAltura("");
@@ -96,12 +93,13 @@ const Formulario = () => {
           <h4 className="text-center">JUGADORES DE LA NBA</h4>
           <ul className="list-group">
             {listaJugadores.map((item) => (
-              <li className="list-group-item" key={item.cedula}>
+              <li className="list-group-item" key={item.id}>
                 <span className="lead">
-                  {item.jugador}-{item.nacionalidad}-{item.altura}
-                  -{item.equipo}-{item.posicion}-{item.numero}-{item.habilidad}
+                  {item.jugador}-{item.nacionalidad}-{item.altura}-{item.equipo}
+                  -{item.posicion}-{item.numero}-{item.habilidad}
                 </span>
-                <button className="btn btn-danger btn-sm float-end mx-2">
+                <button className="btn btn-danger btn-sm float-end mx-2"
+                onClick={()=>eliminar(item.id)}>
                   Eliminar
                 </button>
                 <button className="btn btn-warning btn-sm float-end">
@@ -115,13 +113,6 @@ const Formulario = () => {
         <div className="col-4">
           <h4 className="text-center">Agregar Jugador</h4>
           <form onSubmit={guardarJugador}>
-            <input
-              type="number"
-              className="form-control mb-2"
-              placeholder="Ingrese Cédula"
-              value={cedula}
-              onChange={(e) => SetCedula(e.target.value)}
-            />
             <input
               type="text"
               className="form-control mb-2"
@@ -139,14 +130,13 @@ const Formulario = () => {
             <input
               type="number"
               className="form-control mb-2"
-              placeholder="Ingrese Altura del Jugador"
+              placeholder="Ingrese Altura"
               value={altura}
               onChange={(e) => SetAltura(e.target.value)}
             />
             <select
-              name="hola"
               type="text"
-              className="form-select"
+              className="form-select mb-2"
               aria-label="Default select example"
               onChange={(e) => SetEquipo(e.target.value)}
               defaultValue=""
@@ -196,14 +186,14 @@ Minnesota Timberwolves"
             <input
               type="text"
               className="form-control mb-2"
-              placeholder="Ingrese una Posición"
+              placeholder="Ingrese Posición"
               value={posicion}
               onChange={(e) => SetPosicion(e.target.value)}
             />
             <input
               type="number"
               className="form-control mb-2"
-              placeholder="Ingrese Numero de Camiseta"
+              placeholder="Ingrese Numero"
               value={numero}
               onChange={(e) => SetNumero(e.target.value)}
             />
