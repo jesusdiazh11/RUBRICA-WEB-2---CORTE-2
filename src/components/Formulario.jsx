@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import swal from "sweetalert";
 import { db } from "../firebase";
 import {
   collection,
@@ -9,7 +8,7 @@ import {
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { async } from "@firebase/util";
+import swal from "sweetalert";
 
 const Formulario = () => {
   const [jugador, SetJugador] = useState("");
@@ -22,6 +21,13 @@ const Formulario = () => {
   const [listaJugadores, setListaJugadores] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [id, SetId] = useState("");
+  const [imagen, setImagen] = useState("");
+  const [error, setError] = useState(null);
+
+  const obtenerImagen = async () => {
+    const { url } = await fetch(`https://picsum.photos/200`);
+    return url;
+  };
 
   useEffect(() => {
     const obtenerDatos = async () => {
@@ -39,28 +45,51 @@ const Formulario = () => {
   }, []);
 
   const eliminar = async (id) => {
-    try {
-      await deleteDoc(doc(db, "jugadores", id));
-    } catch (error) {
-      console.log(error);
-    }
+    swal({
+      title: "¿Seguro que deseas eliminar este jugador?",
+      text: "¡El jugador será eliminado permanentemente!",
+      icon: "warning",
+      buttons: true,
+      dangerMode: true,
+    }).then((willDelete) => {
+      if (willDelete) {
+        try {
+          deleteDoc(doc(db, "jugadores", id));
+          setModoEdicion(false);
+        } catch (error) {
+          console.log(error);
+        }
+        swal({
+          title: "¡El jugador ha sido eliminado con éxito!",
+          icon: "success",
+          timer: 2000,
+        });
+      }
+    });
   };
 
   const guardarJugador = async (e) => {
     e.preventDefault();
-    try {
-      const data = await addDoc(collection(db, "jugadores"), {
-        jugador: jugador,
-        nacionalidad: nacionalidad,
-        altura: altura,
-        equipo: equipo,
-        posicion: posicion,
-        numero: numero,
-        habilidad: habilidad,
-      });
-      setListaJugadores([
-        ...listaJugadores,
-        {
+    if (jugador === "") {
+      setError("Ingrese un nombre.");
+    } else if (nacionalidad === "") {
+      setError("Ingrese una nacionalidad.");
+    } else if (altura === "") {
+      setError("Ingrese una estatura.");
+    } else if (equipo === "") {
+      setError("Ingrese un equipo.");
+    } else if (posicion === "") {
+      setError("Ingrese una posición.");
+    } else if (numero === "") {
+      setError("Ingrese un número.");
+    } else if (habilidad === "") {
+      setError("Ingrese una habilidad.");
+    } else {
+      try {
+        const url = await obtenerImagen();
+        setImagen(url);
+        const data = await addDoc(collection(db, "jugadores"), {
+          imagen: url,
           jugador: jugador,
           nacionalidad: nacionalidad,
           altura: altura,
@@ -68,63 +97,103 @@ const Formulario = () => {
           posicion: posicion,
           numero: numero,
           habilidad: habilidad,
-          id: data.id,
-        },
-      ]);
+        });
+        setListaJugadores([
+          ...listaJugadores,
+          {
+            imagen: url,
+            jugador: jugador,
+            nacionalidad: nacionalidad,
+            altura: altura,
+            equipo: equipo,
+            posicion: posicion,
+            numero: numero,
+            habilidad: habilidad,
+            id: data.id,
+          },
+        ]);
 
-      SetJugador("");
-      SetNacionalidad("");
-      SetAltura("");
-      SetEquipo("");
-      SetPosicion("");
-      SetNumero("");
-      SetHabilidad("");
-    } catch (error) {
-      console.log(error);
+        SetJugador("");
+        SetNacionalidad("");
+        SetAltura("");
+        SetEquipo("");
+        SetPosicion("");
+        SetNumero("");
+        SetHabilidad("");
+        setError(null);
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
   const editarJugador = async (e) => {
     e.preventDefault();
-    try {
-      const docRef = doc(db, "jugadores", id);
-      await updateDoc(docRef, {
-        jugador: jugador,
-        nacionalidad: nacionalidad,
-        altura: altura,
-        equipo: equipo,
-        posicion: posicion,
-        numero: numero,
-        habilidad: habilidad,
-      });
+    if (jugador === "") {
+      setError("Ingrese un nombre.");
+    } else if (nacionalidad === "") {
+      setError("Ingrese una nacionalidad.");
+    } else if (altura === "") {
+      setError("Ingrese una estatura.");
+    } else if (equipo === "") {
+      setError("Ingrese un equipo.");
+    } else if (posicion === "") {
+      setError("Ingrese una posición.");
+    } else if (numero === "") {
+      setError("Ingrese un número.");
+    } else if (habilidad === "") {
+      setError("Ingrese una habilidad.");
+    } else {
+      try {
+        const url = await obtenerImagen();
+        setImagen(url);
+        const docRef = doc(db, "jugadores", id);
+        await updateDoc(docRef, {
+          imagen: url,
+          jugador: jugador,
+          nacionalidad: nacionalidad,
+          altura: altura,
+          equipo: equipo,
+          posicion: posicion,
+          numero: numero,
+          habilidad: habilidad,
+        });
 
-      const nuevoArray = listaJugadores.map((item) =>
-        item.id === id
-          ? {
-              id: id,
-              jugador: jugador,
-              nacionalidad: nacionalidad,
-              altura: altura,
-              equipo: equipo,
-              posicion: posicion,
-              numero: numero,
-              habilidad: habilidad,
-            }
-          : item
-      );
+        const nuevoArray = listaJugadores.map((item) =>
+          item.id === id
+            ? {
+                id: id,
+                imagen: url,
+                jugador: jugador,
+                nacionalidad: nacionalidad,
+                altura: altura,
+                equipo: equipo,
+                posicion: posicion,
+                numero: numero,
+                habilidad: habilidad,
+              }
+            : item
+        );
 
-      setListaJugadores(nuevoArray);
-      SetJugador("");
-      SetNacionalidad("");
-      SetAltura("");
-      SetEquipo("");
-      SetPosicion("");
-      SetNumero("");
-      SetHabilidad("");
-      SetId("")
-      setModoEdicion(false)
-    } catch (error) {
-      console.log(error);
+        setListaJugadores(nuevoArray);
+        SetJugador("");
+        SetNacionalidad("");
+        SetAltura("");
+        SetEquipo("");
+        SetPosicion("");
+        SetNumero("");
+        SetHabilidad("");
+        SetId("");
+        setModoEdicion(false);
+        setError(null);
+        swal({
+            icon: "success",
+            title: "Su jugador ha sido editado con éxito.",
+            timer: 3000,
+          });
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -154,30 +223,38 @@ const Formulario = () => {
 
   return (
     <div className="container mt-5">
-      <h1 className="text-center">CRUD WEB2 C2</h1>
+      <h1 className="text-center">BASE DE DATOS DE LA NBA</h1>
       <hr />
       <div className="row">
         <div className="col-8">
-          <h4 className="text-center">JUGADORES DE LA NBA</h4>
+          <h4 className="text-center">Listado de Jugadores</h4>
           <ul className="list-group">
             {listaJugadores.map((item) => (
               <li className="list-group-item" key={item.id}>
                 <span className="lead">
-                  {item.jugador}-{item.nacionalidad}-{item.altura}-{item.equipo}
-                  -{item.posicion}-{item.numero}-{item.habilidad}
+                  {item.jugador}-{item.nacionalidad}-{item.altura + "cm"}-
+                  {item.equipo}-{item.posicion}-{item.numero}-{item.habilidad}
                 </span>
-                <button
-                  className="btn btn-danger btn-sm float-end mx-2"
-                  onClick={() => eliminar(item.id)}
-                >
-                  Eliminar
-                </button>
-                <button
-                  className="btn btn-warning btn-sm float-end"
-                  onClick={() => editar(item)}
-                >
-                  Editar
-                </button>
+                <div className="d-flex flex-column align-items-center">
+                  <img
+                    className="mb-2"
+                    width={100}
+                    src={item.imagen}
+                    alt="imagenAleatoria"
+                  />
+                  <button
+                    className="btn btn-danger btn-sm float-end mx-2 mb-2 col-2"
+                    onClick={() => eliminar(item.id)}
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    className="btn btn-warning btn-sm float-end col-2"
+                    onClick={() => editar(item)}
+                  >
+                    Editar
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -188,12 +265,18 @@ const Formulario = () => {
             {modoEdicion ? "Editar Jugador" : "Agregar Jugador"}
           </h4>
           <form onSubmit={modoEdicion ? editarJugador : guardarJugador}>
+            {error ? (
+              <div className="alert alert-danger text-center" role="alert">
+                {error}
+              </div>
+            ) : null}
             <input
-              type="text"
+              type="name"
               className="form-control mb-2"
               placeholder="Ingrese Jugador"
               value={jugador}
               onChange={(e) => SetJugador(e.target.value)}
+              //   required
             />
             <input
               type="text"
@@ -201,13 +284,15 @@ const Formulario = () => {
               placeholder="Ingrese Nacionalidad"
               value={nacionalidad}
               onChange={(e) => SetNacionalidad(e.target.value)}
+              //   required
             />
             <input
               type="number"
               className="form-control mb-2"
-              placeholder="Ingrese Altura"
+              placeholder="Ingrese Altura(cm)"
               value={altura}
               onChange={(e) => SetAltura(e.target.value)}
+              //   required
             />
             <select
               type="text"
@@ -215,6 +300,7 @@ const Formulario = () => {
               aria-label="Default select example"
               onChange={(e) => SetEquipo(e.target.value)}
               value={equipo}
+              //   required
             >
               <option value="">Seleccione Equipo</option>
               <option value="Boston Celtics">Boston Celtics</option>
@@ -264,6 +350,7 @@ Minnesota Timberwolves"
               aria-label="Default select example"
               onChange={(e) => SetPosicion(e.target.value)}
               value={posicion}
+              //   required
             >
               <option value="">Seleccione Posición</option>
               <option value="BASE">BASE</option>
@@ -279,14 +366,32 @@ Minnesota Timberwolves"
               placeholder="Ingrese Número"
               value={numero}
               onChange={(e) => SetNumero(e.target.value)}
+              //   required
             />
-            <input
+            <select
               type="text"
-              className="form-control mb-2"
-              placeholder="Ingrese Habilidad"
-              value={habilidad}
+              className="form-select mb-2"
+              aria-label="Default select example"
               onChange={(e) => SetHabilidad(e.target.value)}
-            />
+              value={habilidad}
+              //   required
+            >
+              <option value="">Seleccione Habilidad</option>
+              <option value="DESPLAZAMIENTO CON BALÓN">
+                DESPLAZAMIENTO CON BALÓN
+              </option>
+              <option value="DESPLAZAMIENTO SIN BALÓN">
+                DESPLAZAMIENTO SIN BALÓN
+              </option>
+              <option value="LUCHA">LUCHA</option>
+              <option value="DEFENSA">DEFENSA</option>
+              <option value="SALTO">SALTO</option>
+              <option value="TIRO CERCANO">TIRO CERCANO</option>
+              <option value="TIRO LEJANO">TIRO LEJANO</option>
+              <option value="MATE">MATE</option>
+              <option value="BANDEJA">BANDEJA</option>
+              <option value="REBOTES">REBOTES</option>
+            </select>
             {modoEdicion ? (
               <>
                 <button className="btn btn-warning btn-block" on="submit">
